@@ -13,11 +13,20 @@ use SilverStripe\Core\Extension;
  */
 class ElementalAreaOwnerExtension extends Extension
 {
+
+    private static $casting = [
+        'OwnerTitleAndDescription' => 'Varchar',
+    ];
+
     /**
      * If the owner 'page' exists, provide a short title with context
      * @return string
      */
     public function OwnerTitleAndDescription() : string
+    {
+        return $this->getOwnerTitleAndDescription();
+    }
+    public function getOwnerTitleAndDescription() : string
     {
         $title = '';
 
