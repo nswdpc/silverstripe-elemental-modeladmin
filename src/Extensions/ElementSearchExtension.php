@@ -17,7 +17,10 @@ class ElementSearchExtension extends DataExtension
             $orderedFields['Title'] = $fields['Title'];
         }
         foreach ($fields as $k=>$v) {
-            if ($k == "Title") {
+            if ($k === "Title") {
+                continue;
+            }
+            if($k === 'LastEdited') {
                 continue;
             }
             $orderedFields[ $k ] = $fields[ $k ];

@@ -21,18 +21,26 @@ use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 
+use SilverStripe\Core\Config\Config;
+use SilverStripe\ORM\DataObject;
+
 /**
  * An Elemental model administration area
  * @author James
  */
 class ElementalAdmin extends ModelAdmin
 {
-
     /**
      * @var array
      */
     private static $managed_models = [
         BaseElement::class
+    ];
+
+    /**
+     * @var array
+     */
+    private static $excluded_managed_models = [
     ];
 
     /**
@@ -43,12 +51,12 @@ class ElementalAdmin extends ModelAdmin
     /**
      * @var string
      */
-    private static $menu_title = 'Elements';
+    private static $menu_title = 'Blocks';
 
     /**
      * @var string
      */
-    private static $url_segment = 'elements-admin';
+    private static $url_segment = 'blocks-admin';
 
     /**
      * Get the list of applicable elements, exclude ElementVirtual if available
@@ -57,6 +65,7 @@ class ElementalAdmin extends ModelAdmin
     public function getList()
     {
         $list = parent::getList();
+        $list = $list->exclude(['ClassName:not' => $this->modelClass]);
         if ($sort = $this->config()->get('default_sort')) {
             $list = $list->sort($sort);
         } else {
@@ -69,6 +78,47 @@ class ElementalAdmin extends ModelAdmin
 
         return $list;
     }
+
+    public function getManagedModels()
+    {
+        $list =
+            Config::inst()->get(static::class, 'managed_models')
+            + array_values(ClassInfo::subclassesFor(BaseElement::class, false));
+        Config::modify()->set(static::class, 'managed_models', $list);
+        $excluded = Config::inst()->get(static::class, 'excluded_managed_models');
+        $list = parent::getManagedModels();
+        foreach($list as $key => $values) {
+            $remove = false;
+            if(in_array($values['dataClass'], $excluded)) {
+                $remove = true;
+            }
+            if(class_exists(ElementVirtual::class) && $values['dataClass'] === ElementVirtual::class) {
+                $remove = true;
+            }
+            $obj = Injector::inst()->get($values['dataClass']);
+            if(! $obj->canCreate()) {
+                $remove = true;
+            }
+
+            $count = DataObject::singleton($values['dataClass'])->get()->filter(['ClassName' => $values['dataClass']])->count();
+            if($count < 1) {
+                $remove = true;
+            } else {
+                $list[$key]['title'] .= ' (' . $count . ')';
+            }
+            if($remove) {
+                unset($list[$key]);
+                continue;
+            }
+            $meaninglessWords = ['Columns', 'Column', 'Blocks', 'Block', 'Elemental', 'Element'];
+            $list[$key]['title'] = trim(str_replace($meaninglessWords, '', $list[$key]['title']));
+            if(!$list[$key]['title']) {
+                $list[$key]['title'] = 'Blocks / Columns';
+            }
+        }
+        return $list;
+    }
+
 
     /**
      * Return the GridField form listing elements
@@ -98,7 +148,7 @@ class ElementalAdmin extends ModelAdmin
             ];
             if(class_exists(ElementVirtual::class)) {
                 // This field is provided by ElementVirtual component
-                $display_fields['AvailableGlobally.Nice'] = _t('ElementalModelAdmin.GLOBAL','Global');
+                $display_fields['AvailableGlobally.Nice'] = _t('ElementalModelAdmin.GLOBAL', 'Global');
             }
             $dc->setDisplayFields($display_fields);
         }
@@ -124,17 +174,19 @@ class ElementalAdmin extends ModelAdmin
      * @param $gf GridField with a filter header
      * @return void
      */
-    protected function applyBlockTypeFilter(GridField &$gf) {
+    protected function applyBlockTypeFilter(GridField &$gf)
+    {
         $gfConfig = $gf->getConfig();
         // add field with search context callback
-        $filterHeader = $gfConfig->getComponentByType( GridFieldFilterHeader::class );
+        /** @var GridFieldFilterHeader $filterHeader */
+        $filterHeader = $gfConfig->getComponentByType(GridFieldFilterHeader::class);
         $searchContext = $filterHeader->getSearchContext($gf);
         $fields = $searchContext->getFields();
         if($fields) {
             $sourceBlockTypes = ClassInfo::subclassesFor(BaseElement::class, false);
             $filterSource = [];
             foreach($sourceBlockTypes as $k => $className) {
-                $inst = Injector::inst()->get( $className );
+                $inst = Injector::inst()->get($className);
                 $filterSource[ $className  ] = $inst->getType();
             }
             asort($filterSource);
