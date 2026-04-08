@@ -10,7 +10,7 @@ use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\DropdownField;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
 
@@ -20,9 +20,9 @@ use SilverStripe\ORM\DB;
  * enabling selection of another area
  * Areas not available are filtered out - e.g those attached to classes that no longer exist
  * @author James
- * @extends \SilverStripe\ORM\DataExtension<(\DNADesign\Elemental\Models\BaseElement & static)>
+ * @extends \SilverStripe\Core\Extension<(\DNADesign\Elemental\Models\BaseElement & static)>
  */
-class MoveElementExtension extends DataExtension
+class MoveElementExtension extends Extension
 {
     /**
      * Add a parent selection field to the CMS fields, if any exist

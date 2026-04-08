@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace NSWDPC\Elemental\ModelAdmin\Extensions;
 
 use SilverStripe\Forms\DropdownField;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
 /**
  * A hackish way of getting the title to appear first for searches
- * @extends \SilverStripe\ORM\DataExtension<(\DNADesign\Elemental\Models\BaseElement & static)>
+ * @extends \SilverStripe\Core\Extension<(\DNADesign\Elemental\Models\BaseElement & static)>
  */
-class ElementSearchExtension extends DataExtension
+class ElementSearchExtension extends Extension
 {
     public function updateSearchableFields(array &$fields)
     {
